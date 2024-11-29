@@ -33,11 +33,11 @@ body {
   font-family: 'Roboto', sans-serif;
 }
 
-body.darkMode input {
+body.edit.darkMode input {
   --overlayFontColor: #ffffff;
 }
 
-body.darkMode input::placeholder {
+body.edit.darkMode input::placeholder {
   color: #ffffff;
 }
 
@@ -391,6 +391,7 @@ body.aspectTooGood.hiddenToolbar {
       background: var(--toolbarColor);
       box-shadow: 0 0 5px #0005;
       pointer-events: none;
+      transition: color 0.3s ease;   
     }
 
     body:not(.loading) .toolbarButton:hover .tooltip, body.wideToolbar .toolbarButton .tooltip {
@@ -854,6 +855,11 @@ button {
   border-radius: 5px;
   background-repeat: no-repeat;
   margin: 1px;
+  transition: color 0.3s ease
+}
+
+button.playerChange .tooltip.playerChange {
+  color: yellow
 }
 
 button:hover {
@@ -985,13 +991,17 @@ button.visualProgress {
   width: 1em;
 }
 .richtextSymbol.symbols {
-  top: 0.1em;
+  top: 0.15em;
 }
 .richtextSymbol.material-icons {
   top: 0.2em;
 }
 .richtextSymbol.gameicons, img.emoji {
   vertical-align: bottom;
+}
+.richtextSymbol.emoji-monochrome {
+  font-size: 1em !important;
+  width: 1.2em !important;
 }
 
 .symbols {
@@ -1755,7 +1765,7 @@ input:invalid+span::after, .inputError::before {
   z-index: 2;
 }
 
-.inputchoose .widget {
+.inputchoose .inputchooseWidgetWrapper > .widget {
   position: relative !important;
   transform-origin: top left !important;
   z-index: 1 !important;

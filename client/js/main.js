@@ -5,8 +5,6 @@ import { startWebSocket, toServer } from './connection.js';
 export let scale = 1;
 let roomRectangle;
 let overlayActive = false;
-let muted = false;
-let unmuteVol = 30;
 let optionsHidden = true;
 
 let edit = null;
@@ -378,15 +376,15 @@ async function loadEditMode() {
   if(edit === null) {
     edit = false;
     Object.assign(window, {
-      $, $a, div, progressButton, loadImage, on, onMessage, showOverlay, sleep, rand,
+      $, $a, div, progressButton, loadImage, on, onMessage, showOverlay, sleep, rand, shuffleArray,
       setJEenabled, setJEroutineLogging, setZoomAndOffset, toggleEditMode, getEdit,
-      toServer, batchStart, batchEnd, setDeltaCause, sendPropertyUpdate, getUndoProtocol, setUndoProtocol, sendRawDelta,
-      addWidgetLocal, removeWidgetLocal,
+      toServer, batchStart, batchEnd, setDeltaCause, sendPropertyUpdate, getUndoProtocol, setUndoProtocol, sendRawDelta, getDelta,
+      addWidgetLocal, updateWidgetId, removeWidgetLocal,
       loadJSZip, waitForJSZip,
       generateUniqueWidgetID, unescapeID, regexEscape, setScale, getScale, getRoomRectangle, getMaxZ,
       uploadAsset, _uploadAsset, mapAssetURLs, pickSymbol, selectFile, triggerDownload,
       config, getPlayerDetails, roomID, getDeltaID, widgets, widgetFilter, isOverlayActive,
-      formField,
+      html, formField,
       Widget, BasicWidget, Button, Canvas, Card, Deck, Dice, Holder, Label, Pile, Scoreboard, Seat, Spinner, Timer,
       toHex, contrastAnyColor,
       asArray, compute_ops,
@@ -443,6 +441,11 @@ onLoad(function() {
     }
   });
 
+  on('.toolbarButton', 'touchstart', function(e) {
+    usedTouch = true;
+    $('body').classList.add('usedTouch');
+  });
+
   on('.toolbarTab', 'click', function(e) {
     if(e.currentTarget.classList.contains('active')) {
       if($('#stateDetailsOverlay.notEditing') && $('#stateDetailsOverlay.notEditing').style.display != 'none')
@@ -473,24 +476,6 @@ onLoad(function() {
       if(overlay == 'statesOverlay')
         updateFilterOverflow();
     }
-  });
-
-  on('#muteButton', 'click', function() {
-    if(muted) {
-      $('#volume').value = unmuteVol;
-      $('#muteButton').classList.remove('muted');
-      $a('audio').forEach(function(audio){
-        audio.volume = Math.min(audio.getAttribute('maxVolume') * (((10 ** (unmuteVol / 96.025)) / 10) - 0.1), 1);
-      });
-    } else {
-      unmuteVol = document.getElementById('volume').value;
-      $('#volume').value = 0;
-      $a('audio').forEach(function(audio){
-        audio.volume = 0;
-      });
-      document.getElementById('muteButton').classList.add('muted');
-    }
-    muted = !muted
   });
 
   on('#lightsButton', 'click', function(){
@@ -602,16 +587,4 @@ window.onkeyup = function(event) {
     else if($('#buttonInputCancel').style.visibility == 'visible')
       $('#buttonInputCancel').click();
   }
-}
-
-if($('#volume')) {
-  on('#volume', 'input', function(){ // allows volume to be adjusted in real time
-    if(muted) {
-      $('#muteButton').classList.remove('muted');
-      muted = !muted
-    }
-    $a('audio').forEach(function(audio){
-      audio.volume = Math.min(audio.getAttribute('maxVolume') * (((10 ** ($('#volume').value / 96.025)) / 10) - 0.1), 1);
-    });
-  });
 }

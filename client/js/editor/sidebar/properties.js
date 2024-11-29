@@ -18,14 +18,6 @@ function positionElementsInArc(elements, radius, arcAngle, container) {
   }
 }
 
-function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
 function getBoundingClientRectWithAbsoluteChildren(element) {
   const rect = element.children.length ? { left: 9999, top: 9999, right: 0, bottom: 0 } : element.getBoundingClientRect();
   let left = rect.left;
@@ -269,7 +261,9 @@ class PropertiesModule extends SidebarModule {
       switch(widget.get('type')) {
         case 'card':   this.renderForCard(widget);   break;
         case 'deck':   this.renderForDeck(widget);   break;
+        case 'dice': this.renderForDice(widget); break;
         case 'holder': this.renderForHolder(widget); break;
+        case 'spinner': this.renderForSpinner(widget); break;
 
         default:
           this.addHeader(widget.id);
@@ -1202,6 +1196,7 @@ class PropertiesModule extends SidebarModule {
   renderCardTypes(deck, onlyCardType=null) {
     const card = new Card();
     card.state.deck = deck.id;
+    card.deck = deck;
     const cardTypes = this.cardTypes = JSON.parse(JSON.stringify(deck.get('cardTypes')));
 
     this.cardTypeCards = [];
@@ -1231,7 +1226,7 @@ class PropertiesModule extends SidebarModule {
 
       const cardClone = new Card();
       const newState = {...card.state};
-      newState.activeFace = deck.get('faceTemplates').length>1?1:0;
+      newState.activeFace = card.getFaceCount()>1?1:0;
       newState.cardType = cardType;
       cardClone.renderReadonlyCopyRaw(newState, $('.renderedWidget', cardTypeDiv));
 
@@ -1361,6 +1356,104 @@ class PropertiesModule extends SidebarModule {
     this.renderGenericProperties(widget, [ 'cardTypes', 'faceTemplates', 'cardDefaults', 'x', 'y', 'z' ]);
   }
 
+  renderForDice(widget) {
+    this.addHeader(`Dice ${widget.id}`);
+    const widgetFaces = widget.get('faces');
+    const faceCount = Array.isArray(widgetFaces) ? widgetFaces.length : 0;
+
+    this.addSubHeader('Dice types');
+    const faces = [
+      ["H", "T"],
+      [1, 2, 3, 4],
+      [1, 2, 3, 4, 5, 6],
+      [1, 2, 3, 4, 5, 6, 7, 8],
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    ];
+
+    for (const f of faces) {
+      const dice = this.renderWidgetButton(new Dice(), {
+        type: 'dice',
+        faces: f,
+        activeFace: f.length - 1,
+        shape3d: widget.get('shape3d'),
+        pipSymbols: widget.get('pipSymbols')
+      }, this.moduleDOM);
+
+      this.addPropertyListener(widget, 'faces', widget => {
+        if (JSON.stringify(widgetFaces) === JSON.stringify(f)) {
+          dice.classList.add('selected');
+        } else {
+          dice.classList.remove('selected');
+        }
+      });
+      dice.onclick = async e => {
+        if (!dice.classList.contains('selected')) {
+          widget.set('faces', f);
+        }
+      };
+    }
+
+    this.addSubHeader('Dice shape');
+    const shape = [true, false];
+
+    for (const s of shape) {
+      const diceShape = this.renderWidgetButton(new Dice(), {
+        type: 'dice',
+        faces: widgetFaces,
+        activeFace: faceCount - 1,
+        shape3d: s,
+        pipSymbols: widget.get('pipSymbols')
+      }, this.moduleDOM);
+
+      this.addPropertyListener(widget, 'shape3d', widget => {
+        if (JSON.stringify(widget.get('shape3d')) === JSON.stringify(s)) {
+          diceShape.classList.add('selected');
+        } else {
+          diceShape.classList.remove('selected');
+        }
+      });
+
+      diceShape.onclick = async e => {
+        if (!diceShape.classList.contains('selected')) {
+          widget.set('shape3d', s);
+        }
+      };
+    }
+
+    this.addSubHeader('Face type');
+    const pipType = [true, false];
+
+    for (const p of pipType) {
+      const dicePip = this.renderWidgetButton(new Dice(), {
+        type: 'dice',
+        faces: widgetFaces,
+        activeFace: faceCount - 1,
+        shape3d: widget.get('shape3d'),
+        pipSymbols: p
+      }, this.moduleDOM);
+
+      this.addPropertyListener(widget, 'pipSymbols', widget => {
+        if (JSON.stringify(widget.get('pipSymbols')) === JSON.stringify(p)) {
+          dicePip.classList.add('selected');
+        } else {
+          dicePip.classList.remove('selected');
+        }
+      });
+
+      dicePip.onclick = async e => {
+        if (!dicePip.classList.contains('selected')) {
+          widget.set('pipSymbols', p);
+        }
+      };
+    }
+
+    this.addSubHeader(`Dice properties`);
+    this.renderGenericProperties(widget, ['faces','pipSymbols','shape3d']);
+  }
+
   renderForHolder(widget) {
     this.addHeader(`Holder ${widget.id}`);
     this.addSubHeader('Target widgets');
@@ -1460,6 +1553,47 @@ class PropertiesModule extends SidebarModule {
     this.renderGenericProperties(widget, [ 'dropTarget' ]);
   }
 
+  renderForSpinner(widget) {
+    this.addHeader(`Spinner ${widget.id}`);
+    
+    this.addSubHeader('Spinner Options');
+    const options = [
+      ["H", "T"],
+      [1, 2, 3],
+      [1, 2, 3, 4],
+      [1, 2, 3, 4, 5, 6],
+      [1, 2, 3, 4, 5, 6, 7, 8],
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    ];
+
+    for (const option of options) {
+      const spinner = this.renderWidgetButton(new Spinner(), {
+        type: 'spinner',
+        options: option
+      }, this.moduleDOM);
+
+      this.addPropertyListener(widget, 'options', widget => {
+        if (JSON.stringify(widget.get('options')) === JSON.stringify(option)) {
+          spinner.classList.add('selected');
+        } else {
+          spinner.classList.remove('selected');
+        }
+      });
+
+      spinner.onclick = async e => {
+        if (!spinner.classList.contains('selected')) {
+          widget.set('options', option);
+        }
+      };
+    }
+
+    this.addSubHeader(`Spinner properties`);
+    this.renderGenericProperties(widget, ['options']);
+  }    
+
   renderGenericProperties(widget, exclude) {
     for(const property in widget.state) {
       if([ 'id', 'type', 'parent' ].concat(exclude).indexOf(property) != -1)
@@ -1484,12 +1618,13 @@ class PropertiesModule extends SidebarModule {
 
     if(widget.get('type') == 'deck') {
       const parent = new BasicWidget().renderReadonlyCopyRaw({}, button).domElement;
+      const faceTemplates = widget.get('faceTemplates');
       widgets.set(widget.id, widget);
       for(const cardType of shuffleArray(Object.keys(widget.get('cardTypes'))).slice(0, 5)) {
         new Card().renderReadonlyCopyRaw(Object.assign({
           deck: widget.id,
           cardType,
-          activeFace: widget.get('faceTemplates').length > 1 ? 1 : 0
+          activeFace: Array.isArray(faceTemplates) && faceTemplates.length > 1 ? 1 : 0
         }, state), parent);
       }
       widgets.delete(widget.id, widget);
